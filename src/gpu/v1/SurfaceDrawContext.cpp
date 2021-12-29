@@ -381,6 +381,8 @@ void SurfaceDrawContext::drawGlyphRunList(const GrClip* clip,
 void SurfaceDrawContext::drawPaint(const GrClip* clip,
                                    GrPaint&& paint,
                                    const SkMatrix& viewMatrix) {
+    GR_CREATE_TRACE_MARKER_CONTEXT("SurfaceDrawContext", "drawPaint", fContext);
+
     // Start with the render target, since that is the maximum content we could possibly fill.
     // drawFilledQuad() will automatically restrict it to clip bounds for us if possible.
     if (!paint.numTotalFragmentProcessors()) {
@@ -742,6 +744,8 @@ void SurfaceDrawContext::fillRectToRect(const GrClip* clip,
                                         const SkMatrix& viewMatrix,
                                         const SkRect& rectToDraw,
                                         const SkRect& localRect) {
+    GR_CREATE_TRACE_MARKER_CONTEXT("SurfaceDrawContext", "fillRectToRect", fContext);
+
     DrawQuad quad{GrQuad::MakeFromRect(rectToDraw, viewMatrix), GrQuad(localRect),
                   aa == GrAA::kYes ? GrQuadAAFlags::kAll : GrQuadAAFlags::kNone};
 
@@ -1899,16 +1903,25 @@ void SurfaceDrawContext::addDrawOp(const GrClip* clip,
     const bool opUsesMSAA = drawOp->usesMSAA();
     bool skipDraw = false;
     if (clip) {
+        TRACE_EVENT0("SurfaceDrawContext::addDrawOp", "Clip");
         // Have a complex clip, so defer to its early clip culling
         GrAAType aaType;
         if (opUsesMSAA) {
+                  TRACE_EVENT0("SurfaceDrawContext::addDrawOp", "ClipUsesMSAA");
+
             aaType = GrAAType::kMSAA;
         } else {
+                  TRACE_EVENT0("SurfaceDrawContext::addDrawOp", "ClipNoMSAA");
+
             aaType = op->hasAABloat() ? GrAAType::kCoverage : GrAAType::kNone;
         }
+                TRACE_EVENT0("SurfaceDrawContext::addDrawOp", "ClipApply");
+
         skipDraw = clip->apply(fContext, this, drawOp, aaType,
                                &appliedClip, &bounds) == GrClip::Effect::kClippedOut;
     } else {
+              TRACE_EVENT0("SurfaceDrawContext::addDrawOp", "NoClipping");
+
         // No clipping, so just clip the bounds against the logical render target dimensions
         skipDraw = !bounds.intersect(this->asSurfaceProxy()->getBoundsRect());
     }
@@ -1927,8 +1940,10 @@ void SurfaceDrawContext::addDrawOp(const GrClip* clip,
     const bool drawNeedsMSAA = opUsesMSAA || (fCanUseDynamicMSAA && opUsesStencil);
 
     // Must be called before setDstProxyView so that it sees the final bounds of the op.
-    op->setClippedBounds(bounds);
+            TRACE_EVENT0("SurfaceDrawContext::addDrawOp", "SetClippedBounds");
 
+    op->setClippedBounds(bounds);
+TRACE_EVENT0("SurfaceDrawContext::addDrawOp", "AfterSetClippedBounds");
     // Determine if the Op will trigger the use of a separate DMSAA attachment that requires manual
     // resolves.
     // TODO: Currently usesAttachmentIfDMSAA checks if this is a textureProxy or not. This check is
@@ -1944,6 +1959,8 @@ void SurfaceDrawContext::addDrawOp(const GrClip* clip,
     bool opTriggersDMSAAAttachment =
             opRequiresDMSAAAttachment && !this->getOpsTask()->usesMSAASurface();
     if (opTriggersDMSAAAttachment) {
+              TRACE_EVENT0("SurfaceDrawContext::addDrawOp", "opTriggersDMSAAAttachment");
+
         // This will be the op that actually triggers use of a DMSAA attachment. Texture barriers
         // can't be moved to a DMSAA attachment, so if there already are any on the current opsTask
         // then we need to split.
@@ -1955,6 +1972,8 @@ void SurfaceDrawContext::addDrawOp(const GrClip* clip,
 
     GrDstProxyView dstProxyView;
     if (analysis.requiresDstTexture()) {
+              TRACE_EVENT0("SurfaceDrawContext::addDrawOp", "RequiresDSTTexture");
+
         if (!this->setupDstProxyView(drawOp->bounds(), drawNeedsMSAA, &dstProxyView)) {
             return;
         }
@@ -1970,12 +1989,16 @@ void SurfaceDrawContext::addDrawOp(const GrClip* clip,
 
     auto opsTask = this->getOpsTask();
     if (willAddFn) {
+              TRACE_EVENT0("SurfaceDrawContext::addDrawOp", "WillAddFn");
+
         willAddFn(op.get(), opsTask->uniqueID());
     }
 
     // Note if the op needs stencil. Stencil clipping already called setNeedsStencil for itself, if
     // needed.
     if (opUsesStencil) {
+              TRACE_EVENT0("SurfaceDrawContext::addDrawOp", "OpUsesStencil");
+
         this->setNeedsStencil();
     }
 

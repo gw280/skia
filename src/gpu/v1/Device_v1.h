@@ -8,6 +8,8 @@
 #ifndef SkGpuDevice_DEFINED
 #define SkGpuDevice_DEFINED
 
+#include <stack>
+
 #include "include/core/SkBitmap.h"
 #include "include/core/SkPicture.h"
 #include "include/core/SkRegion.h"
@@ -148,8 +150,24 @@ protected:
     bool onReadPixels(const SkPixmap&, int, int) override;
     bool onWritePixels(const SkPixmap&, int, int) override;
 
-    void onSave() override { fClip.save(); }
-    void onRestore() override { fClip.restore(); }
+    void onSave(bool clear = false) override {
+      fClip->save();
+      if (clear) {
+        fSavedClipsStack.push(std::move(fClip));
+        fClip = new ClipStack(SkIRect::MakeSize(fSurfaceDrawContext->dimensions()),
+                  &this->asMatrixProvider(),
+                  true);
+      } else {
+        fSavedClipsStack.push(nullptr);
+      }
+    }
+    void onRestore() override {
+      if (!fSavedClipsStack.empty() && fSavedClipsStack.top() != nullptr) {
+        fClip = fSavedClipsStack.top();
+      }
+      fSavedClipsStack.pop();
+      fClip->restore();
+    }
 
     void onDrawGlyphRunList(const SkGlyphRunList& glyphRunList, const SkPaint& paint) override;
 
@@ -161,20 +179,20 @@ protected:
 
     void onClipRect(const SkRect& rect, SkClipOp op, bool aa) override {
         SkASSERT(op == SkClipOp::kIntersect || op == SkClipOp::kDifference);
-        fClip.clipRect(this->localToDevice(), rect, GrAA(aa), op);
+        fClip->clipRect(this->localToDevice(), rect, GrAA(aa), op);
     }
     void onClipRRect(const SkRRect& rrect, SkClipOp op, bool aa) override {
         SkASSERT(op == SkClipOp::kIntersect || op == SkClipOp::kDifference);
-        fClip.clipRRect(this->localToDevice(), rrect, GrAA(aa), op);
+        fClip->clipRRect(this->localToDevice(), rrect, GrAA(aa), op);
     }
     void onClipPath(const SkPath& path, SkClipOp op, bool aa) override;
     void onClipShader(sk_sp<SkShader> shader) override {
-        fClip.clipShader(std::move(shader));
+        fClip->clipShader(std::move(shader));
     }
     void onReplaceClip(const SkIRect& rect) override {
         // Transform from "global/canvas" coordinates to relative to this device
         SkRect deviceRect = SkMatrixPriv::MapRect(this->globalToDevice(), SkRect::Make(rect));
-        fClip.replaceClip(deviceRect.round());
+        fClip->replaceClip(deviceRect.round());
     }
     void onClipRegion(const SkRegion& globalRgn, SkClipOp op) override;
     void onAsRgnClip(SkRegion*) const override;
@@ -182,14 +200,15 @@ protected:
     bool onClipIsAA() const override;
 
     bool onClipIsWideOpen() const override {
-        return fClip.clipState() == ClipStack::ClipState::kWideOpen;
+        return fClip->clipState() == ClipStack::ClipState::kWideOpen;
     }
-    SkIRect onDevClipBounds() const override { return fClip.getConservativeBounds(); }
+    SkIRect onDevClipBounds() const override { return fClip->getConservativeBounds(); }
 
 private:
     std::unique_ptr<SurfaceDrawContext> fSurfaceDrawContext;
 
-    ClipStack fClip;
+    ClipStack* fClip;
+    std::stack<ClipStack*> fSavedClipsStack;
 
     static sk_sp<BaseDevice> Make(std::unique_ptr<SurfaceDrawContext>,
                                   SkAlphaType,
@@ -205,7 +224,7 @@ private:
 
     bool forceConservativeRasterClip() const override { return true; }
 
-    const GrClip* clip() const { return &fClip; }
+    const GrClip* clip() const { return fClip; }
 
     // If not null, dstClip must be contained inside dst and will also respect the edge AA flags.
     // If 'preViewMatrix' is not null, final CTM will be this->ctm() * preViewMatrix.

@@ -593,18 +593,28 @@ int SkCanvas::getSaveCount() const {
     return fSaveCount;
 }
 
-int SkCanvas::save() {
+int SkCanvas::save(bool clear) {
+    if (!clear) {
+      fSaveCount += 1;
+      fMCRec->fDeferredSaveCount += 1;
+      return this->getSaveCount() - 1;  // return our prev value
+    }
+
+    while (fMCRec->fDeferredSaveCount > 0) {
+      this->doSave();
+    }
     fSaveCount += 1;
-    fMCRec->fDeferredSaveCount += 1;
-    return this->getSaveCount() - 1;  // return our prev value
+    this->willSave();
+    this->internalSave(clear);
+    return this->getSaveCount() - 1;
 }
 
-void SkCanvas::doSave() {
+void SkCanvas::doSave(bool clear) {
     this->willSave();
 
     SkASSERT(fMCRec->fDeferredSaveCount > 0);
     fMCRec->fDeferredSaveCount -= 1;
-    this->internalSave();
+    this->internalSave(clear);
 }
 
 void SkCanvas::restore() {
@@ -636,10 +646,10 @@ void SkCanvas::restoreToCount(int count) {
     }
 }
 
-void SkCanvas::internalSave() {
+void SkCanvas::internalSave(bool clear) {
     fMCRec = new (fMCStack.push_back()) MCRec(fMCRec);
 
-    this->topDevice()->save();
+    this->topDevice()->save(clear);
 }
 
 int SkCanvas::saveLayer(const SkRect* bounds, const SkPaint* paint) {

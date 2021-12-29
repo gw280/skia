@@ -22,7 +22,7 @@ public:
     const SkClipStack& cs() const { return fClipStack; }
 
 protected:
-    void onSave() override;
+    void onSave(bool clear = false) override;
     void onRestore() override;
     void onClipRect(const SkRect& rect, SkClipOp, bool aa) override;
     void onClipRRect(const SkRRect& rrect, SkClipOp, bool aa) override;

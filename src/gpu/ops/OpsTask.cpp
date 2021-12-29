@@ -427,6 +427,7 @@ void OpsTask::addDrawOp(GrDrawingManager* drawingMgr, GrOp::Owner op, bool usesM
                         const GrProcessorSet::Analysis& processorAnalysis, GrAppliedClip&& clip,
                         const GrDstProxyView& dstProxyView,
                         GrTextureResolveManager textureResolveManager, const GrCaps& caps) {
+    TRACE_EVENT0("skia.gpu", TRACE_FUNC);
     auto addDependency = [&](GrSurfaceProxy* p, GrMipmapped mipmapped) {
         this->addSampledTexture(p);
         this->addDependency(drawingMgr, p, mipmapped, textureResolveManager, caps);

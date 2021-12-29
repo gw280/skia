@@ -19,7 +19,7 @@ SkIRect SkClipStackDevice::onDevClipBounds() const {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-void SkClipStackDevice::onSave() {
+void SkClipStackDevice::onSave(bool clear) {
     fClipStack.save();
 }
 

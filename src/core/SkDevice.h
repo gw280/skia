@@ -143,7 +143,7 @@ public:
 
     const SkMatrixProvider& asMatrixProvider() const { return *this; }
 
-    void save() { this->onSave(); }
+    void save(bool clear = false) { this->onSave(clear); }
     void restore(const SkM44& ctm) {
         this->onRestore();
         this->setGlobalCTM(ctm);
@@ -203,7 +203,7 @@ protected:
         uint32_t    fFlags;     // SkPaint::getFlags()
     };
 
-    virtual void onSave() {}
+    virtual void onSave(bool clear = false) {}
     virtual void onRestore() {}
     virtual void onClipRect(const SkRect& rect, SkClipOp, bool aa) {}
     virtual void onClipRRect(const SkRRect& rrect, SkClipOp, bool aa) {}
@@ -488,7 +488,7 @@ public:
 protected:
     // SkNoPixelsDevice tracks the clip conservatively in order to respond to some queries as
     // accurately as possible while emphasizing performance
-    void onSave() override;
+    void onSave(bool clear = false) override;
     void onRestore() override;
     void onClipRect(const SkRect& rect, SkClipOp op, bool aa) override;
     void onClipRRect(const SkRRect& rrect, SkClipOp op, bool aa) override;

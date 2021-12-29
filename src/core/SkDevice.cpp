@@ -496,7 +496,7 @@ sk_sp<SkSurface> SkBaseDevice::makeSurface(SkImageInfo const&, SkSurfaceProps co
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-void SkNoPixelsDevice::onSave() {
+void SkNoPixelsDevice::onSave(bool clear) {
     SkASSERT(!fClipStack.empty());
     fClipStack.back().fDeferredSaveCount++;
 }

@@ -182,9 +182,9 @@ Device::Device(std::unique_ptr<SurfaceDrawContext> sdc, DeviceFlags flags)
                     MakeInfo(sdc.get(), flags),
                     sdc->surfaceProps())
         , fSurfaceDrawContext(std::move(sdc))
-        , fClip(SkIRect::MakeSize(fSurfaceDrawContext->dimensions()),
+        , fClip(new ClipStack(SkIRect::MakeSize(fSurfaceDrawContext->dimensions()),
                 &this->asMatrixProvider(),
-                force_aa_clip(fSurfaceDrawContext.get())) {
+                force_aa_clip(fSurfaceDrawContext.get()))) {
     if (flags & DeviceFlags::kNeedClear) {
         this->clearAll();
     }
@@ -254,7 +254,7 @@ void Device::onClipPath(const SkPath& path, SkClipOp op, bool aa) {
     }
 #endif
     SkASSERT(op == SkClipOp::kIntersect || op == SkClipOp::kDifference);
-    fClip.clipPath(this->localToDevice(), path, GrAA(aa), op);
+    fClip->clipPath(this->localToDevice(), path, GrAA(aa), op);
 }
 
 void Device::onClipRegion(const SkRegion& globalRgn, SkClipOp op) {
@@ -264,22 +264,22 @@ void Device::onClipRegion(const SkRegion& globalRgn, SkClipOp op) {
     GrAA aa = GrAA(fSurfaceDrawContext->alwaysAntialias());
 
     if (globalRgn.isEmpty()) {
-        fClip.clipRect(SkMatrix::I(), SkRect::MakeEmpty(), aa, op);
+        fClip->clipRect(SkMatrix::I(), SkRect::MakeEmpty(), aa, op);
     } else if (globalRgn.isRect()) {
-        fClip.clipRect(this->globalToDevice().asM33(), SkRect::Make(globalRgn.getBounds()), aa, op);
+        fClip->clipRect(this->globalToDevice().asM33(), SkRect::Make(globalRgn.getBounds()), aa, op);
     } else {
         SkPath path;
         globalRgn.getBoundaryPath(&path);
-        fClip.clipPath(this->globalToDevice().asM33(), path, aa, op);
+        fClip->clipPath(this->globalToDevice().asM33(), path, aa, op);
     }
 }
 
 void Device::onAsRgnClip(SkRegion* region) const {
-    SkIRect bounds = fClip.getConservativeBounds();
+    SkIRect bounds = fClip->getConservativeBounds();
     // Assume wide open and then perform intersect/difference operations reducing the region
     region->setRect(bounds);
     const SkRegion deviceBounds(bounds);
-    for (const ClipStack::Element& e : fClip) {
+    for (const ClipStack::Element& e : *fClip) {
         SkRegion tmp;
         if (e.fShape.isRect() && e.fLocalToDevice.isIdentity()) {
             tmp.setRect(e.fShape.rect().roundOut());
@@ -295,7 +295,7 @@ void Device::onAsRgnClip(SkRegion* region) const {
 }
 
 bool Device::onClipIsAA() const {
-    for (const ClipStack::Element& e : fClip) {
+    for (const ClipStack::Element& e : *fClip) {
         if (e.fAA == GrAA::kYes) {
             return true;
         }
@@ -305,7 +305,7 @@ bool Device::onClipIsAA() const {
 }
 
 SkBaseDevice::ClipType Device::onGetClipType() const {
-    ClipStack::ClipState state = fClip.clipState();
+    ClipStack::ClipState state = fClip->clipState();
     if (state == ClipStack::ClipState::kEmpty) {
         return ClipType::kEmpty;
     } else if (state == ClipStack::ClipState::kDeviceRect ||

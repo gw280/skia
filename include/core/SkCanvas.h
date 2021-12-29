@@ -558,7 +558,7 @@ public:
 
         example: https://fiddle.skia.org/c/@Canvas_save
     */
-    int save();
+    int save(bool clear = false);
 
     /** Saves SkMatrix and clip, and allocates a SkBitmap for subsequent drawing.
         Calling restore() discards changes to SkMatrix and clip, and draws the SkBitmap.
@@ -2384,7 +2384,7 @@ private:
     SkIRect fClipRestrictionRect = SkIRect::MakeEmpty();
     int fClipRestrictionSaveCount = -1;
 
-    void doSave();
+    void doSave(bool clear = false);
     void checkForDeferredSave();
     void internalSetMatrix(const SkM44&);
 
@@ -2457,7 +2457,7 @@ private:
     void internalConcat44(const SkM44&);
 
     // shared by save() and saveLayer()
-    void internalSave();
+    void internalSave(bool clear = false);
     void internalRestore();
 
     enum class DeviceCompatibleWithFilter : bool {

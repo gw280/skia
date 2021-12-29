@@ -614,7 +614,7 @@ SkImageFilterCache* SkBitmapDevice::getImageFilterCache() {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-void SkBitmapDevice::onSave() {
+void SkBitmapDevice::onSave(bool clear) {
     fRCStack.save();
 }
 
