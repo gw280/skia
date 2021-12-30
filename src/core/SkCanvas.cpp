@@ -2188,6 +2188,23 @@ static SkPaint clean_paint_for_drawVertices(SkPaint paint) {
     return paint;
 }
 
+void SkCanvas::onDrawRectToRect(const SkRect& src, const SkRect& dst,
+                                const SkSamplingOptions& sampling, const SkPaint* paint,
+                                SrcRectConstraint constraint) {
+  SkPaint realPaint = clean_paint_for_drawImage(paint);
+
+  if (this->internalQuickReject(dst, realPaint)) {
+    return;
+  }
+
+  auto layer = this->aboutToDraw(this, realPaint, &dst, CheckForOverwrite::kYes,
+                                 kNotOpaque_ShaderOverrideOpacity);
+
+  if (layer) {
+      this->topDevice()->drawRectToRect(&src, dst, sampling, layer->paint(), constraint);
+  }
+}
+
 void SkCanvas::onDrawImage2(const SkImage* image, SkScalar x, SkScalar y,
                             const SkSamplingOptions& sampling, const SkPaint* paint) {
     SkPaint realPaint = clean_paint_for_drawImage(paint);
@@ -2268,6 +2285,13 @@ void SkCanvas::drawImage(const SkImage* image, SkScalar x, SkScalar y,
     TRACE_EVENT0("skia", TRACE_FUNC);
     RETURN_ON_NULL(image);
     this->onDrawImage2(image, x, y, sampling, paint);
+}
+
+void SkCanvas::drawRectToRect(const SkRect& src, const SkRect& dst,
+                              const SkSamplingOptions& sampling, const SkPaint* paint,
+                              SrcRectConstraint constraint) {
+  TRACE_EVENT0("skia", TRACE_FUNC);
+  this->onDrawRectToRect(src, dst, sampling, paint, constraint);
 }
 
 void SkCanvas::drawImageRect(const SkImage* image, const SkRect& src, const SkRect& dst,

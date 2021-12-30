@@ -80,7 +80,9 @@ protected:
      *  path on the stack to hold the representation of the oval.
      */
     void drawPath(const SkPath&, const SkPaint&, bool pathIsMutable) override;
-
+    void drawRectToRect(const SkRect* src, const SkRect& dst,
+                        const SkSamplingOptions&, const SkPaint&,
+                        SkCanvas::SrcRectConstraint) override {}
     void drawImageRect(const SkImage*, const SkRect* src, const SkRect& dst,
                        const SkSamplingOptions&, const SkPaint&,
                        SkCanvas::SrcRectConstraint) override;

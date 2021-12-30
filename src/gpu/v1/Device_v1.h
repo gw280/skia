@@ -19,6 +19,7 @@
 #include "src/gpu/SkGr.h"
 #include "src/gpu/v1/ClipStack.h"
 #include "src/gpu/v1/SurfaceDrawContext_v1.h"
+#include "src/image/SkImage_Gpu.h"
 
 class SkSpecialImage;
 class SkSurface;
@@ -120,6 +121,9 @@ public:
     void drawAtlas(const SkRSXform[], const SkRect[], const SkColor[], int count, sk_sp<SkBlender>,
                    const SkPaint&) override;
 
+    void drawRectToRect(const SkRect* src, const SkRect& dst,
+                        const SkSamplingOptions&, const SkPaint&,
+                        SkCanvas::SrcRectConstraint) override;
     void drawImageRect(const SkImage*, const SkRect* src, const SkRect& dst,
                        const SkSamplingOptions&, const SkPaint&,
                        SkCanvas::SrcRectConstraint) override;

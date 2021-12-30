@@ -1465,6 +1465,11 @@ public:
         this->drawImageRect(image.get(), dst, sampling, paint);
     }
 
+    // draw a src rect from this canvas to a dst rect in the same canvas.
+    // src is in device coordinates. dst will be transformed by the current matrix on the device.
+    void drawRectToRect(const SkRect& src, const SkRect& dst,
+                        const SkSamplingOptions& sampling, const SkPaint*, SrcRectConstraint);
+
     /** Draws SkImage image stretched proportionally to fit into SkRect dst.
         SkIRect center divides the image into nine sections: four sides, four corners, and
         the center. Corners are unmodified or scaled down proportionately if their sides
@@ -2220,6 +2225,9 @@ protected:
     virtual void onDrawPoints(PointMode mode, size_t count, const SkPoint pts[],
                               const SkPaint& paint);
 
+    virtual void onDrawRectToRect(const SkRect& src, const SkRect& dst,
+                                  const SkSamplingOptions& sampling, const SkPaint* paint,
+                                  SrcRectConstraint constraint);
     virtual void onDrawImage2(const SkImage*, SkScalar dx, SkScalar dy, const SkSamplingOptions&,
                               const SkPaint*);
     virtual void onDrawImageRect2(const SkImage*, const SkRect& src, const SkRect& dst,

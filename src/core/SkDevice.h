@@ -258,6 +258,9 @@ protected:
                           const SkPaint& paint,
                           bool pathIsMutable = false) = 0;
 
+    virtual void drawRectToRect(const SkRect* src, const SkRect& dst,
+                                const SkSamplingOptions&, const SkPaint&,
+                                SkCanvas::SrcRectConstraint) = 0;
     virtual void drawImageRect(const SkImage*, const SkRect* src, const SkRect& dst,
                                const SkSamplingOptions&, const SkPaint&,
                                SkCanvas::SrcRectConstraint) = 0;
@@ -509,6 +512,9 @@ protected:
 
     void drawPaint(const SkPaint& paint) override {}
     void drawPoints(SkCanvas::PointMode, size_t, const SkPoint[], const SkPaint&) override {}
+    void drawRectToRect(const SkRect*, const SkRect&,
+                        const SkSamplingOptions&, const SkPaint&,
+                        SkCanvas::SrcRectConstraint) override {}
     void drawImageRect(const SkImage*, const SkRect*, const SkRect&,
                        const SkSamplingOptions&, const SkPaint&,
                        SkCanvas::SrcRectConstraint) override {}

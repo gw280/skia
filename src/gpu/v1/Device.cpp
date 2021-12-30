@@ -745,6 +745,24 @@ void Device::drawDevice(SkBaseDevice* device,
     this->INHERITED::drawDevice(device, sampling, paint);
 }
 
+void Device::drawRectToRect(const SkRect* src, const SkRect& dst,
+                            const SkSamplingOptions& sampling, const SkPaint& paint,
+                            SkCanvas::SrcRectConstraint constraint) {
+  // TODO(gw280): do this without needing SkImage_Gpu object
+  auto rContext = this->recordingContext();
+
+  GrSurfaceProxyView srcView = this->readSurfaceView();
+
+  const SkImageInfo info = this->imageInfo();
+
+  auto image = sk_make_sp<SkImage_Gpu>(sk_ref_sp(rContext),
+                                        kNeedNewImageUniqueID,
+                                        std::move(srcView),
+                                        info.colorInfo());
+  
+  this->drawImageRect(image.get(), src, dst, sampling, paint, constraint);
+}
+
 void Device::drawImageRect(const SkImage* image,
                            const SkRect* src,
                            const SkRect& dst,
